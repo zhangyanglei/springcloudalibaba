@@ -1,6 +1,11 @@
 package com.itmuch.contentcenter;
 
+import com.alibaba.csp.sentinel.Entry;
+import com.alibaba.csp.sentinel.SphU;
+import com.alibaba.csp.sentinel.Tracer;
 import com.alibaba.csp.sentinel.annotation.SentinelResource;
+import com.alibaba.csp.sentinel.context.ContextUtil;
+import com.alibaba.csp.sentinel.slots.block.BlockException;
 import com.alibaba.csp.sentinel.slots.block.RuleConstant;
 import com.alibaba.csp.sentinel.slots.block.flow.FlowRule;
 import com.alibaba.csp.sentinel.slots.block.flow.FlowRuleManager;
@@ -9,17 +14,25 @@ import com.itmuch.contentcenter.domain.dto.user.UserDTO;
 import com.itmuch.contentcenter.domain.entity.content.Share;
 import com.itmuch.contentcenter.feignclient.TestBaiduFeignClient;
 import com.itmuch.contentcenter.feignclient.TestUserCenterFeignClient;
+import com.itmuch.contentcenter.sentineltest.TestControllerBlockHandlerClass;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import lombok.Cleanup;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.catalina.User;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.RestTemplate;
 
 @RestController
+@Slf4j
 public class TestController {
 
     @Autowired(required = false)
@@ -101,5 +114,58 @@ public class TestController {
         rules.add(rule);
         FlowRuleManager.loadRules(rules);
     }
+
+    @GetMapping("/test-sentinel-api")
+    public String testSentinelAPI(
+        @RequestParam(required = false) String a) {
+        String resourceName = "test-sentinel-api";
+        ContextUtil.enter(resourceName, "test-wfw");
+        Entry entry = null;
+        try {
+            entry = SphU.entry(resourceName);
+            if (StringUtils.isBlank(a)) {
+                throw new IllegalArgumentException("a不能为空");
+            }
+            return a;
+        } catch (BlockException e) {
+            log.warn("限流, 或者降级了", e);
+            return "限流, 或者降级了";
+        } catch (IllegalArgumentException e2) {
+            Tracer.trace(e2);
+            return "参数非法";
+        } finally {
+            if (entry != null) {
+                entry.exit();
+            }
+            ContextUtil.exit();
+        }
+    }
+
+    @GetMapping("/test-sentinel-resource")
+    @SentinelResource(
+        value = "test-sentinel-api",
+        blockHandler = "block",
+        blockHandlerClass = TestControllerBlockHandlerClass.class,
+        fallback = "fallback")
+    public String testSentinelResource(
+        @RequestParam(required = false) String a) {
+        if (StringUtils.isBlank(a)) {
+            throw new IllegalArgumentException("a cannot be blank");
+        }
+        return a;
+    }
+
+    public String fallback(String a) {
+        return "限流, 或者降级了 fallback";
+    }
+
+    @Autowired
+    private RestTemplate restTemplate;
+
+    @GetMapping("/test-rest-template-sentinel/{userId}")
+    public UserDTO test(@PathVariable Integer userId) {
+        return this.restTemplate.getForObject("http://user-center/users/{userId}", UserDTO.class, userId);
+    }
+
 }
 

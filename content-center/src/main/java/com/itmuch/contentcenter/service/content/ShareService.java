@@ -1,11 +1,13 @@
 package com.itmuch.contentcenter.service.content;
 
+import com.itmuch.contentcenter.dao.content.ShareAuditDTO;
 import com.itmuch.contentcenter.dao.content.ShareMapper;
 import com.itmuch.contentcenter.domain.dto.content.ShareDTO;
 import com.itmuch.contentcenter.domain.dto.user.UserDTO;
 import com.itmuch.contentcenter.domain.entity.content.Share;
 import com.itmuch.contentcenter.feignclient.UserCenterFeignClient;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -37,4 +39,16 @@ public class ShareService {
         return shareDTO;
     }
 
+    public Share auditById(Integer id, ShareAuditDTO auditDTO) {
+        Share share = this.shareMapper.selectByPrimaryKey(id);
+        if (share == null) {
+            throw new IllegalArgumentException("参数非法!该分享不存在");
+        }
+        if (Objects.equals("NOT_YET", share.getAuditStatus())) {
+            throw new IllegalArgumentException("参数非法!该分享已审核通过或不通过");
+        }
+        share.setAuditStatus(auditDTO.getAuditStatusEnum().toString());
+        this.shareMapper.updateByPrimaryKey(share);
+        userCenterFeignClient.addBonus(id,500);
+    }
 }
