@@ -18,9 +18,7 @@ import com.itmuch.contentcenter.sentineltest.TestControllerBlockHandlerClass;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import lombok.Cleanup;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.catalina.User;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.client.ServiceInstance;
@@ -166,6 +164,7 @@ public class TestController {
     public UserDTO test(@PathVariable Integer userId) {
         return this.restTemplate.getForObject("http://user-center/users/{userId}", UserDTO.class, userId);
     }
+
 
 }
 

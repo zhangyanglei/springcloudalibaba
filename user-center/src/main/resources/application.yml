@@ -15,7 +15,18 @@ spring:
           instance: c
           haha: hehe
           version: v1
+    stream:
+      rocketmq:
+        binder:
+          name-server: 127.0.0.1:9876
+      bindings:
+        input:
+          destination: add-bonus
+          group: binder-group
   application:
     name: user-center
 server:
   port: 8081
+logging:
+  level:
+    com.alibaba.nacos: error
