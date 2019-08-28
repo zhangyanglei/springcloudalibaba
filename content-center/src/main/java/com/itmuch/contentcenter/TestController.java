@@ -18,11 +18,18 @@ import com.itmuch.contentcenter.sentineltest.TestControllerBlockHandlerClass;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import javax.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -31,6 +38,7 @@ import org.springframework.web.client.RestTemplate;
 
 @RestController
 @Slf4j
+@RefreshScope
 public class TestController {
 
     @Autowired(required = false)
@@ -163,6 +171,29 @@ public class TestController {
     @GetMapping("/test-rest-template-sentinel/{userId}")
     public UserDTO test(@PathVariable Integer userId) {
         return this.restTemplate.getForObject("http://user-center/users/{userId}", UserDTO.class, userId);
+    }
+
+
+    @GetMapping("/tokenRelay/{userId}")
+    public ResponseEntity<UserDTO> tokenRelay(@PathVariable Integer userId, HttpServletRequest request) {
+        String token = request.getHeader("X-Token");
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("X-Token", token);
+        return this.restTemplate.exchange(
+            "http://user-center/users/{userId}",
+            HttpMethod.GET,
+            new HttpEntity<>(headers),
+            UserDTO.class,
+            userId
+        );
+    }
+
+    @Value("${your.configuration}")
+    private String yourConfiguration;
+
+    @GetMapping("/test-config")
+    public String testConfiguration() {
+        return this.yourConfiguration;
     }
 
 

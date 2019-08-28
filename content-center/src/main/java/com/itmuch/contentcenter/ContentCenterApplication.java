@@ -1,5 +1,6 @@
 package com.itmuch.contentcenter;
 
+import java.util.Collections;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.alibaba.sentinel.annotation.SentinelRestTemplate;
@@ -26,7 +27,11 @@ public class ContentCenterApplication {
     @LoadBalanced
     @SentinelRestTemplate
     public RestTemplate restTemplate() {
-        return new RestTemplate();
+        RestTemplate restTemplate = new RestTemplate();
+        restTemplate.setInterceptors(
+            Collections.singletonList(new TestRestTemplateTokenRelayInterceptor())
+        );
+        return restTemplate;
     }
 
 }

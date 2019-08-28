@@ -13,13 +13,17 @@ spring:
           # 让gateway通过服务发现组件找到其他的微服务
           enabled: true
       routes:
-        - id: after_route
+        - id: user_route
           uri: lb://user-center
           predicates:
-            - TimeBetween=上午0:00,下午11:59
-          filters:
-            - AddRequestHeader=X-Request-Foo, Bar
-            - PreLog=a,b
+            - Path=/users/**
+        - id: content_route
+          uri: lb://content-center
+          predicates:
+            - Path=/shares/**,/admin/**
+  zipkin:
+    base-url: http://localhost:9411
+    discoveryClientEnabled: false
 management:
   endpoints:
     web:

@@ -1,5 +1,6 @@
 package com.itmuch.contentcenter.controller.content;
 
+import com.itmuch.contentcenter.auth.CheckLogin;
 import com.itmuch.contentcenter.domain.dto.content.ShareDTO;
 import com.itmuch.contentcenter.service.content.ShareService;
 import lombok.RequiredArgsConstructor;
@@ -13,9 +14,12 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/shares")
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class ShareController {
-    private  final ShareService shareService;
+
+    private final ShareService shareService;
+
     @GetMapping("/{id}")
-    public ShareDTO findById(@PathVariable Integer id){
+    @CheckLogin
+    public ShareDTO findById(@PathVariable Integer id) {
         return this.shareService.findById(id);
     }
 }
